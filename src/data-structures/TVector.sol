@@ -2,7 +2,6 @@
 pragma solidity ^0.8.28;
 
 import "../allocators/AllocatorFactory.sol";
-import "forge-std/console.sol";
 import "../allocators/MemoryAllocator.sol";
 
 /**
@@ -51,7 +50,6 @@ library TVector {
                 bytes32(uint256(_getNextNonce()))
             )
         );
-        console.logBytes32(slot);
         vector.basePointer = allocatorType.allocate(slot, initialCapacity); // Pass both slot and size
         vector.capacity = initialCapacity;
         vector._length = 0;
@@ -64,7 +62,6 @@ library TVector {
      */
     function push(Vector memory vector, uint256 value) internal {
         if (vector._length == vector.capacity) {
-            console.log("resize");
             _resize(vector);
         }
 
@@ -75,7 +72,6 @@ library TVector {
                 value
             );
         } else {
-            console.log("StorageAllocator or TransientAllocator");
             bytes32 slot = keccak256(
                 abi.encodePacked(vector.basePointer, vector._length)
             );
@@ -83,7 +79,6 @@ library TVector {
         }
 
         vector._length++;
-        console.log("length", vector._length);
     }
 
     /**
