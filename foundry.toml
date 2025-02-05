@@ -2,5 +2,8 @@
 src = "src"
 out = "out"
 libs = ["lib"]
+via-ir = true
+solc = "0.8.28"
+gasLimit = 10000000000
 
 # See more config options https://github.com/foundry-rs/foundry/blob/master/crates/config/README.md#all-options
