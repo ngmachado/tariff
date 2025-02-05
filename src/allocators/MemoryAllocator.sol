@@ -2,7 +2,6 @@
 pragma solidity ^0.8.28;
 
 import "../interfaces/IAllocator.sol";
-import "forge-std/console.sol";
 
 /**
  * @title MemoryAllocator
@@ -71,7 +70,6 @@ library MemoryAllocator {
         uint256 index,
         uint256 value
     ) internal pure {
-        console.log("storeAtIndex", value);
         assembly {
             mstore(add(basePointer, mul(index, 32)), value)
         }
