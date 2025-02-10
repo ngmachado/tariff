@@ -11,9 +11,14 @@ import "../allocators/MemoryAllocator.sol";
 library TVector {
     using AllocatorFactory for AllocatorFactory.AllocatorType;
 
+    error TVectorOutOfBounds();
+    error TVectorOverflow();
+    error TVectorInvalidCapacity();
+    error TVectorCapacityTooLarge();
+    error TVectorEmpty();
     // Counter for generating unique nonces
     uint256 private constant NONCE_SLOT =
-        0x9e5c4c1c31af3f65441d4490ada3aa4d8bd45ea9f03b5d7a46de41832c457b35;
+        0xaa8959192d6857c6a3c773dc74cdc9dac58b573011494b8f3fc2917c93f61b8e;
 
     struct Vector {
         AllocatorFactory.AllocatorType allocator; // Determines storage type
@@ -41,6 +46,11 @@ library TVector {
         AllocatorFactory.AllocatorType allocatorType,
         uint256 initialCapacity
     ) internal returns (Vector memory vector) {
+        // Validate capacity first, before any allocator operations
+        require(initialCapacity > 0, TVectorInvalidCapacity());
+        if (initialCapacity > type(uint256).max / 32)
+            revert TVectorCapacityTooLarge();
+
         vector.allocator = allocatorType;
         bytes32 slot = keccak256(
             abi.encodePacked(
@@ -50,9 +60,11 @@ library TVector {
                 bytes32(uint256(_getNextNonce()))
             )
         );
-        vector.basePointer = allocatorType.allocate(slot, initialCapacity); // Pass both slot and size
+
+        vector.basePointer = allocatorType.allocate(slot, initialCapacity);
         vector.capacity = initialCapacity;
         vector._length = 0;
+        return vector;
     }
 
     /**
@@ -86,7 +98,7 @@ library TVector {
      * @param vector The vector instance
      */
     function pop(Vector memory vector) internal {
-        require(vector._length > 0, "TVector: Empty vector");
+        require(vector._length > 0, TVectorEmpty());
         vector._length--;
         bytes32 slot = keccak256(
             abi.encodePacked(vector.basePointer, vector._length)
@@ -103,7 +115,7 @@ library TVector {
         Vector memory vector,
         uint256 index
     ) internal view returns (uint256) {
-        require(index < vector._length, "TVector: Index out of bounds");
+        require(index < vector._length, TVectorOutOfBounds());
 
         if (vector.allocator == AllocatorFactory.AllocatorType.Memory) {
             return MemoryAllocator.loadAtIndex(vector.basePointer, index);
@@ -128,10 +140,13 @@ library TVector {
      * @param vector The vector instance
      */
     function _resize(Vector memory vector) private {
-        require(vector.capacity > 0, "Invalid capacity");
+        require(vector.capacity > 0, TVectorInvalidCapacity());
         uint256 newCapacity = vector.capacity * 2;
-        require(newCapacity > vector.capacity, "Overflow");
-        require(newCapacity <= type(uint256).max / 32, "Capacity too large");
+        require(newCapacity > vector.capacity, TVectorOverflow());
+        require(
+            newCapacity <= type(uint256).max / 32,
+            TVectorCapacityTooLarge()
+        );
 
         if (vector.allocator == AllocatorFactory.AllocatorType.Memory) {
             // For memory allocator, allocate new space and copy directly
@@ -173,5 +188,31 @@ library TVector {
             vector.basePointer = newPointer;
             vector.capacity = newCapacity;
         }
+    }
+
+    /**
+     * @notice Sets a value at a specific index
+     * @param vector The vector instance
+     * @param index The index to set
+     * @param value The value to set
+     */
+    function set(Vector memory vector, uint256 index, uint256 value) internal {
+        require(index < vector._length, TVectorOutOfBounds());
+        bytes32 slot = keccak256(abi.encodePacked(vector.basePointer, index));
+        vector.allocator.store(slot, value);
+    }
+
+    function load(
+        AllocatorFactory.AllocatorType allocatorType,
+        uint256 capacity,
+        bytes32 slot
+    ) internal view returns (Vector memory) {
+        Vector memory vector;
+        vector.allocator = allocatorType;
+        vector.basePointer = slot;
+        vector.capacity = capacity;
+        // Load length from storage
+        vector._length = uint256(allocatorType.load(slot));
+        return vector;
     }
 }

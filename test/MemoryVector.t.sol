@@ -70,7 +70,7 @@ contract MemoryVectorTest is Test {
             2
         );
 
-        vm.expectRevert("TVector: Empty vector");
+        vm.expectRevert(TVector.TVectorEmpty.selector);
         vector.pop();
     }
 
@@ -81,7 +81,7 @@ contract MemoryVectorTest is Test {
         );
 
         vector.push(42);
-        vm.expectRevert("TVector: Index out of bounds");
+        vm.expectRevert(TVector.TVectorOutOfBounds.selector);
         vector.at(1);
     }
 

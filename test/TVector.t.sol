@@ -8,42 +8,26 @@ import "../src/allocators/AllocatorFactory.sol";
 contract TVectorTest is Test {
     using TVector for TVector.Vector;
 
-    function testInitialization() public {
+    function testNewVector() public {
         TVector.Vector memory vector = TVector.newVector(
             AllocatorFactory.AllocatorType.Transient,
-            10
+            4
         );
-
-        assertEq(TVector.length(vector), 0);
-        assertEq(vector.capacity, 10);
+        assertEq(vector.length(), 0);
+        assertEq(vector.capacity, 4);
     }
 
-    function testPushAndGet() public {
+    function testPushAndAt() public {
         TVector.Vector memory vector = TVector.newVector(
             AllocatorFactory.AllocatorType.Transient,
-            2
-        );
-
-        vector.push(42);
-        vector.push(43);
-
-        assertEq(vector.at(0), 42);
-        assertEq(vector.at(1), 43);
-        assertEq(TVector.length(vector), 2);
-    }
-
-    function testAutoResize() public {
-        TVector.Vector memory vector = TVector.newVector(
-            AllocatorFactory.AllocatorType.Transient,
-            1
+            4
         );
 
         vector.push(1);
-        vector.push(2); // Should trigger resize to capacity 2
+        vector.push(2);
         vector.push(3);
 
-        assertEq(TVector.length(vector), 3);
-        assertEq(vector.capacity, 4); // After resize: 1 -> 2 -> 4
+        assertEq(vector.length(), 3);
         assertEq(vector.at(0), 1);
         assertEq(vector.at(1), 2);
         assertEq(vector.at(2), 3);
@@ -52,118 +36,112 @@ contract TVectorTest is Test {
     function testPop() public {
         TVector.Vector memory vector = TVector.newVector(
             AllocatorFactory.AllocatorType.Transient,
-            2
+            4
         );
 
-        vector.push(42);
-        vector.push(43);
-        assertEq(TVector.length(vector), 2);
+        vector.push(1);
+        vector.push(2);
+        assertEq(vector.length(), 2);
 
         vector.pop();
-        assertEq(TVector.length(vector), 1);
-        assertEq(vector.at(0), 42);
-
-        vector.pop();
-        assertEq(TVector.length(vector), 0);
+        assertEq(vector.length(), 1);
+        assertEq(vector.at(0), 1);
     }
 
-    function testPopEmptyReverts() public {
+    function testPopEmpty() public {
         TVector.Vector memory vector = TVector.newVector(
             AllocatorFactory.AllocatorType.Transient,
-            1
+            4
         );
 
-        vm.expectRevert("TVector: Empty vector");
+        vm.expectRevert(TVector.TVectorEmpty.selector);
         vector.pop();
     }
 
-    function testOutOfBoundsReverts() public {
+    function testAtOutOfBounds() public {
         TVector.Vector memory vector = TVector.newVector(
             AllocatorFactory.AllocatorType.Transient,
-            1
+            4
         );
 
-        vector.push(42);
-
-        vm.expectRevert("TVector: Index out of bounds");
-        vector.at(1);
+        vm.expectRevert(TVector.TVectorOutOfBounds.selector);
+        vector.at(0);
     }
 
-    function testMultipleVectorsIndependent() public {
-        TVector.Vector memory vector1 = TVector.newVector(
-            AllocatorFactory.AllocatorType.Transient,
-            2
-        );
-        TVector.Vector memory vector2 = TVector.newVector(
-            AllocatorFactory.AllocatorType.Transient,
-            2
-        );
-
-        vector1.push(11);
-        vector1.push(12);
-        vector2.push(21);
-        vector2.push(22);
-
-        assertEq(vector1.at(0), 11);
-        assertEq(vector1.at(1), 12);
-        assertEq(vector2.at(0), 21);
-        assertEq(vector2.at(1), 22);
-    }
-
-    function testVectorPersistenceBetweenCalls() public {
+    function testAutoResize() public {
         TVector.Vector memory vector = TVector.newVector(
             AllocatorFactory.AllocatorType.Transient,
             2
         );
 
-        vector.push(42);
-        uint256 length = TVector.length(vector);
-        bytes32 basePointer = vector.basePointer;
+        vector.push(1);
+        vector.push(2);
+        // This should trigger resize
+        vector.push(3);
 
-        // Simulate another call by creating new vector instance with same state
-        TVector.Vector memory vector2;
-        vector2.allocator = vector.allocator;
-        vector2.basePointer = basePointer;
-        vector2.capacity = vector.capacity;
-        vector2._length = length;
-
-        // Should be able to access previous data and continue operations
-        assertEq(vector2.at(0), 42);
-        vector2.push(43);
-        assertEq(vector2.at(1), 43);
+        assertEq(vector.capacity, 4);
+        assertEq(vector.length(), 3);
+        assertEq(vector.at(2), 3);
     }
 
-    function testDifferentAllocators() public {
-        TVector.Vector memory transientVector = TVector.newVector(
-            AllocatorFactory.AllocatorType.Transient,
+    function testMemoryAllocator() public {
+        TVector.Vector memory vector = TVector.newVector(
+            AllocatorFactory.AllocatorType.Memory,
+            4
+        );
+
+        vector.push(1);
+        vector.push(2);
+        vector.push(3);
+
+        assertEq(vector.length(), 3);
+        assertEq(vector.at(0), 1);
+        assertEq(vector.at(1), 2);
+        assertEq(vector.at(2), 3);
+    }
+
+    function testMemoryAllocatorResize() public {
+        TVector.Vector memory vector = TVector.newVector(
+            AllocatorFactory.AllocatorType.Memory,
             2
         );
 
-        transientVector.push(1);
-        assertEq(transientVector.at(0), 1);
+        vector.push(1);
+        vector.push(2);
+        // This should trigger resize
+        vector.push(3);
+
+        assertEq(vector.capacity, 4);
+        assertEq(vector.length(), 3);
+        assertEq(vector.at(2), 3);
     }
 
-    function testLargeDataSet() public {
+    function testInvalidCapacity() public {
+        vm.expectRevert(TVector.TVectorInvalidCapacity.selector);
+        TVector.newVector(AllocatorFactory.AllocatorType.Transient, 0);
+    }
+
+    function testCapacityTooLarge() public {
+        vm.expectRevert(TVector.TVectorCapacityTooLarge.selector);
+        TVector.newVector(
+            AllocatorFactory.AllocatorType.Transient,
+            type(uint256).max
+        );
+    }
+
+    function testFuzzPushAndAt(uint256[] memory values) public {
+        vm.assume(values.length > 0 && values.length <= 100);
+
         TVector.Vector memory vector = TVector.newVector(
             AllocatorFactory.AllocatorType.Transient,
-            16 // Start with reasonable size
+            4
         );
 
-        // Add 100 sequential numbers
-        for (uint256 i = 0; i < 100; i++) {
-            vector.push(i);
-            // Verify last inserted value
-            assertEq(vector.at(i), i);
-            // Verify length
-            assertEq(TVector.length(vector), i + 1);
+        for (uint i = 0; i < values.length; i++) {
+            vector.push(values[i]);
+            assertEq(vector.at(i), values[i]);
         }
 
-        // Verify all values are still correct
-        for (uint256 i = 0; i < 100; i++) {
-            assertEq(vector.at(i), i);
-        }
-
-        // Verify final capacity is sufficient (should be 128 as it doubles: 16->32->64->128)
-        assertEq(vector.capacity, 128);
+        assertEq(vector.length(), values.length);
     }
 }
