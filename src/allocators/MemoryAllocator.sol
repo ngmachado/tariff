@@ -19,10 +19,7 @@ library MemoryAllocator {
      * @param slot Base slot for allocation (used for uniqueness)
      * @param size Number of slots to allocate
      */
-    function allocate(
-        bytes32 slot,
-        uint256 size
-    ) internal pure returns (bytes32 pointer) {
+    function allocate(bytes32 slot, uint256 size) internal pure returns (bytes32 pointer) {
         require(size > 0, "MemoryAllocator: Size must be positive");
         require(size <= 0x1000, "MemoryAllocator: Size too large");
         assembly {
@@ -65,20 +62,13 @@ library MemoryAllocator {
 
     // Additional array-like operations (internal use only)
 
-    function storeAtIndex(
-        bytes32 basePointer,
-        uint256 index,
-        uint256 value
-    ) internal pure {
+    function storeAtIndex(bytes32 basePointer, uint256 index, uint256 value) internal pure {
         assembly {
             mstore(add(basePointer, mul(index, 32)), value)
         }
     }
 
-    function loadAtIndex(
-        bytes32 basePointer,
-        uint256 index
-    ) internal pure returns (uint256 value) {
+    function loadAtIndex(bytes32 basePointer, uint256 index) internal pure returns (uint256 value) {
         assembly {
             value := mload(add(basePointer, mul(index, 32)))
         }
@@ -93,9 +83,7 @@ library MemoryAllocator {
         }
     }
 
-    function getArrayLength(
-        bytes32 basePointer
-    ) internal pure returns (uint256) {
+    function getArrayLength(bytes32 basePointer) internal pure returns (uint256) {
         uint256 length;
         assembly {
             length := mload(add(basePointer, 0x20))
@@ -103,9 +91,7 @@ library MemoryAllocator {
         return length;
     }
 
-    function getArrayCapacity(
-        bytes32 basePointer
-    ) internal pure returns (uint256) {
+    function getArrayCapacity(bytes32 basePointer) internal pure returns (uint256) {
         uint256 capacity;
         assembly {
             capacity := mload(basePointer)

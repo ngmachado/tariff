@@ -19,13 +19,9 @@ library TSet {
      * @notice Creates a new transient set
      * @param allocatorType The storage type (Transient, Memory, Storage)
      */
-    function newTSet(
-        AllocatorFactory.AllocatorType allocatorType
-    ) internal view returns (Set memory set) {
+    function newTSet(AllocatorFactory.AllocatorType allocatorType) internal view returns (Set memory set) {
         set.allocator = allocatorType;
-        bytes32 slot = keccak256(
-            abi.encodePacked("TSet", msg.sender, address(this))
-        );
+        bytes32 slot = keccak256(abi.encodePacked("TSet", msg.sender, address(this)));
         set.basePointer = allocatorType.allocate(slot, 1); // Base slot with size 1
     }
 
@@ -44,10 +40,7 @@ library TSet {
      * @param set The set instance
      * @param value The value to check
      */
-    function contains(
-        Set memory set,
-        bytes32 value
-    ) internal view returns (bool) {
+    function contains(Set memory set, bytes32 value) internal view returns (bool) {
         bytes32 slot = keccak256(abi.encodePacked(set.basePointer, value));
         return set.allocator.load(slot) != 0;
     }

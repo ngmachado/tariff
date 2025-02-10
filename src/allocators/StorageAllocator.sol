@@ -2,10 +2,7 @@
 pragma solidity ^0.8.28;
 
 library StorageAllocator {
-    function allocate(
-        bytes32 slot,
-        uint256 size
-    ) internal pure returns (bytes32 pointer) {
+    function allocate(bytes32 slot, uint256 size) internal pure returns (bytes32 pointer) {
         require(size > 0, "StorageAllocator: Size must be positive");
         pointer = keccak256(abi.encode(slot, size));
     }
@@ -14,9 +11,7 @@ library StorageAllocator {
         require(size > 0, "StorageAllocator: Size must be positive");
         pointer = keccak256(abi.encodePacked("StorageAllocator", size));
         assembly {
-            if iszero(iszero(sload(pointer))) {
-                revert(0, 0)
-            }
+            if iszero(iszero(sload(pointer))) { revert(0, 0) }
         }
     }
 

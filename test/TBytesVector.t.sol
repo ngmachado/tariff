@@ -9,19 +9,13 @@ contract TBytesVectorTest is Test {
     using TBytesVector for TBytesVector.Vector;
 
     function testNewVector() public {
-        TBytesVector.Vector memory vector = TBytesVector.newVector(
-            AllocatorFactory.AllocatorType.Transient,
-            4
-        );
+        TBytesVector.Vector memory vector = TBytesVector.newVector(AllocatorFactory.AllocatorType.Transient, 4);
         assertEq(vector.length(), 0);
         assertEq(vector.capacity, 4);
     }
 
     function testPushAndAt() public {
-        TBytesVector.Vector memory vector = TBytesVector.newVector(
-            AllocatorFactory.AllocatorType.Transient,
-            4
-        );
+        TBytesVector.Vector memory vector = TBytesVector.newVector(AllocatorFactory.AllocatorType.Transient, 4);
 
         bytes memory data1 = "Hello";
         bytes memory data2 = "World";
@@ -35,13 +29,12 @@ contract TBytesVectorTest is Test {
     }
 
     function testSetAndAt() public {
-        TBytesVector.Vector memory vector = TBytesVector.newVector(
-            AllocatorFactory.AllocatorType.Transient,
-            4
-        );
+        TBytesVector.Vector memory vector = TBytesVector.newVector(AllocatorFactory.AllocatorType.Transient, 4);
 
         bytes memory data1 = "Hello";
         vector.push(data1);
+
+        assertEq(string(vector.at(0)), string(data1));
 
         bytes memory data2 = "Updated";
         vector.set(0, data2);
@@ -50,10 +43,7 @@ contract TBytesVectorTest is Test {
     }
 
     function testAutoResize() public {
-        TBytesVector.Vector memory vector = TBytesVector.newVector(
-            AllocatorFactory.AllocatorType.Transient,
-            2
-        );
+        TBytesVector.Vector memory vector = TBytesVector.newVector(AllocatorFactory.AllocatorType.Transient, 2);
 
         bytes memory data1 = "One";
         bytes memory data2 = "Two";
@@ -73,10 +63,7 @@ contract TBytesVectorTest is Test {
     }
 
     function testEmptyBytes() public {
-        TBytesVector.Vector memory vector = TBytesVector.newVector(
-            AllocatorFactory.AllocatorType.Transient,
-            4
-        );
+        TBytesVector.Vector memory vector = TBytesVector.newVector(AllocatorFactory.AllocatorType.Transient, 4);
 
         bytes memory emptyData = "";
         vector.push(emptyData);
@@ -87,14 +74,11 @@ contract TBytesVectorTest is Test {
     }
 
     function testLargeBytes() public {
-        TBytesVector.Vector memory vector = TBytesVector.newVector(
-            AllocatorFactory.AllocatorType.Transient,
-            4
-        );
+        TBytesVector.Vector memory vector = TBytesVector.newVector(AllocatorFactory.AllocatorType.Transient, 4);
 
         // Create large bytes data (>32 bytes)
         bytes memory largeData = new bytes(100);
-        for (uint i = 0; i < 100; i++) {
+        for (uint256 i = 0; i < 100; i++) {
             largeData[i] = bytes1(uint8(i % 256));
         }
 
@@ -106,10 +90,7 @@ contract TBytesVectorTest is Test {
     }
 
     function testOutOfBounds() public {
-        TBytesVector.Vector memory vector = TBytesVector.newVector(
-            AllocatorFactory.AllocatorType.Transient,
-            4
-        );
+        TBytesVector.Vector memory vector = TBytesVector.newVector(AllocatorFactory.AllocatorType.Transient, 4);
 
         vm.expectRevert(TBytesVector.TBytesVectorOutOfBounds.selector);
         vector.at(0);
@@ -128,44 +109,28 @@ contract TBytesVectorTest is Test {
         TBytesVector.newVector(AllocatorFactory.AllocatorType.Transient, 0);
 
         vm.expectRevert(TBytesVector.TBytesVectorCapacityTooLarge.selector);
-        TBytesVector.newVector(
-            AllocatorFactory.AllocatorType.Transient,
-            type(uint256).max
-        );
+        TBytesVector.newVector(AllocatorFactory.AllocatorType.Transient, type(uint256).max);
     }
 
     function testFuzzPushAndAt(bytes[] memory values) public {
         vm.assume(values.length > 0 && values.length <= 100);
-        for (uint i = 0; i < values.length; i++) {
+        for (uint256 i = 0; i < values.length; i++) {
             vm.assume(values[i].length <= 1000); // Reasonable size limit
         }
 
-        TBytesVector.Vector memory vector = TBytesVector.newVector(
-            AllocatorFactory.AllocatorType.Transient,
-            4
-        );
+        TBytesVector.Vector memory vector = TBytesVector.newVector(AllocatorFactory.AllocatorType.Transient, 4);
 
-        for (uint i = 0; i < values.length; i++) {
+        for (uint256 i = 0; i < values.length; i++) {
             vector.push(values[i]);
-            assertEq(
-                keccak256(vector.at(i)),
-                keccak256(values[i]),
-                "Data mismatch at index"
-            );
+            assertEq(keccak256(vector.at(i)), keccak256(values[i]), "Data mismatch at index");
         }
 
         assertEq(vector.length(), values.length);
     }
 
     function testMultipleVectors() public {
-        TBytesVector.Vector memory vector1 = TBytesVector.newVector(
-            AllocatorFactory.AllocatorType.Transient,
-            4
-        );
-        TBytesVector.Vector memory vector2 = TBytesVector.newVector(
-            AllocatorFactory.AllocatorType.Transient,
-            4
-        );
+        TBytesVector.Vector memory vector1 = TBytesVector.newVector(AllocatorFactory.AllocatorType.Transient, 4);
+        TBytesVector.Vector memory vector2 = TBytesVector.newVector(AllocatorFactory.AllocatorType.Transient, 4);
 
         vector1.push("Vector1");
         vector2.push("Vector2");

@@ -9,19 +9,13 @@ contract MemoryVectorTest is Test {
     using TVector for TVector.Vector;
 
     function testInitialization() public {
-        TVector.Vector memory vector = TVector.newVector(
-            AllocatorFactory.AllocatorType.Memory,
-            4
-        );
+        TVector.Vector memory vector = TVector.newVector(AllocatorFactory.AllocatorType.Memory, 4);
         assertEq(vector.length(), 0);
         assertEq(vector.capacity, 4);
     }
 
     function testPushAndGet() public {
-        TVector.Vector memory vector = TVector.newVector(
-            AllocatorFactory.AllocatorType.Memory,
-            4
-        );
+        TVector.Vector memory vector = TVector.newVector(AllocatorFactory.AllocatorType.Memory, 4);
 
         vector.push(42);
         assertEq(vector.length(), 1);
@@ -33,10 +27,7 @@ contract MemoryVectorTest is Test {
     }
 
     function testAutoResize() public {
-        TVector.Vector memory vector = TVector.newVector(
-            AllocatorFactory.AllocatorType.Memory,
-            1
-        );
+        TVector.Vector memory vector = TVector.newVector(AllocatorFactory.AllocatorType.Memory, 1);
 
         vector.push(1);
         vector.push(2);
@@ -50,10 +41,7 @@ contract MemoryVectorTest is Test {
     }
 
     function testPop() public {
-        TVector.Vector memory vector = TVector.newVector(
-            AllocatorFactory.AllocatorType.Memory,
-            2
-        );
+        TVector.Vector memory vector = TVector.newVector(AllocatorFactory.AllocatorType.Memory, 2);
 
         vector.push(42);
         vector.push(43);
@@ -65,20 +53,14 @@ contract MemoryVectorTest is Test {
     }
 
     function testPopEmptyReverts() public {
-        TVector.Vector memory vector = TVector.newVector(
-            AllocatorFactory.AllocatorType.Memory,
-            2
-        );
+        TVector.Vector memory vector = TVector.newVector(AllocatorFactory.AllocatorType.Memory, 2);
 
         vm.expectRevert(TVector.TVectorEmpty.selector);
         vector.pop();
     }
 
     function testOutOfBoundsReverts() public {
-        TVector.Vector memory vector = TVector.newVector(
-            AllocatorFactory.AllocatorType.Memory,
-            2
-        );
+        TVector.Vector memory vector = TVector.newVector(AllocatorFactory.AllocatorType.Memory, 2);
 
         vector.push(42);
         vm.expectRevert(TVector.TVectorOutOfBounds.selector);
@@ -86,14 +68,8 @@ contract MemoryVectorTest is Test {
     }
 
     function testMultipleVectorsIndependent() public {
-        TVector.Vector memory vector1 = TVector.newVector(
-            AllocatorFactory.AllocatorType.Memory,
-            2
-        );
-        TVector.Vector memory vector2 = TVector.newVector(
-            AllocatorFactory.AllocatorType.Memory,
-            2
-        );
+        TVector.Vector memory vector1 = TVector.newVector(AllocatorFactory.AllocatorType.Memory, 2);
+        TVector.Vector memory vector2 = TVector.newVector(AllocatorFactory.AllocatorType.Memory, 2);
 
         vector1.push(11);
         vector2.push(21);

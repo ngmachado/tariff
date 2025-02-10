@@ -13,10 +13,7 @@ library TransientAllocator {
      * @param slot Base slot for allocation, should be unique per allocation
      * @param size Size of the allocation
      */
-    function allocate(
-        bytes32 slot,
-        uint256 size
-    ) internal pure returns (bytes32 pointer) {
+    function allocate(bytes32 slot, uint256 size) internal pure returns (bytes32 pointer) {
         require(slot != bytes32(0), "TransientAllocator: Invalid slot");
         require(size > 0, "TransientAllocator: Size must be positive");
         pointer = keccak256(abi.encode(slot, size));
@@ -25,9 +22,7 @@ library TransientAllocator {
     function allocate(uint256 size) internal view returns (bytes32 pointer) {
         pointer = keccak256(abi.encodePacked("TransientAllocator", size));
         assembly {
-            if iszero(iszero(tload(pointer))) {
-                revert(0, 0)
-            }
+            if iszero(iszero(tload(pointer))) { revert(0, 0) }
         }
     }
 

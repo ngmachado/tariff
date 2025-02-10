@@ -27,11 +27,7 @@ library AllocatorFactory {
      * @param slot The unique identifier for the storage space
      * @param size The required size for allocation
      */
-    function allocate(
-        AllocatorType allocatorType,
-        bytes32 slot,
-        uint256 size
-    ) internal pure returns (bytes32) {
+    function allocate(AllocatorType allocatorType, bytes32 slot, uint256 size) internal pure returns (bytes32) {
         if (allocatorType == AllocatorType.Memory) {
             return MemoryAllocator.allocate(slot, size);
         } else if (allocatorType == AllocatorType.Storage) {
@@ -47,11 +43,7 @@ library AllocatorFactory {
      * @param pointer The allocated pointer
      * @param value The value to store
      */
-    function store(
-        AllocatorType allocatorType,
-        bytes32 pointer,
-        uint256 value
-    ) internal {
+    function store(AllocatorType allocatorType, bytes32 pointer, uint256 value) internal {
         if (allocatorType == AllocatorType.Transient) {
             TransientAllocator.store(pointer, value);
         } else if (allocatorType == AllocatorType.Memory) {
@@ -66,10 +58,7 @@ library AllocatorFactory {
      * @param allocatorType The type of storage space
      * @param pointer The allocated pointer
      */
-    function load(
-        AllocatorType allocatorType,
-        bytes32 pointer
-    ) internal view returns (uint256) {
+    function load(AllocatorType allocatorType, bytes32 pointer) internal view returns (uint256) {
         if (allocatorType == AllocatorType.Transient) {
             return TransientAllocator.load(pointer);
         } else if (allocatorType == AllocatorType.Memory) {

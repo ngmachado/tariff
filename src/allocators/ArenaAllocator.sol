@@ -21,11 +21,7 @@ library ArenaAllocator {
      * @param slot Unique identifier for the arena
      * @param size Maximum capacity of the arena
      */
-    function initialize(
-        Arena memory arena,
-        bytes32 slot,
-        uint256 size
-    ) internal pure {
+    function initialize(Arena memory arena, bytes32 slot, uint256 size) internal pure {
         require(size > 0, "ArenaAllocator: Size must be positive");
         arena.arenaKey = slot;
         arena.capacity = size;
@@ -37,10 +33,7 @@ library ArenaAllocator {
      * @param slot Base slot for allocation
      * @param size Number of slots to allocate
      */
-    function allocate(
-        bytes32 slot,
-        uint256 size
-    ) internal pure returns (bytes32 pointer) {
+    function allocate(bytes32 slot, uint256 size) internal pure returns (bytes32 pointer) {
         return TransientAllocator.allocate(slot, size);
     }
 
@@ -57,18 +50,9 @@ library ArenaAllocator {
      * @param arena The Arena struct
      * @param size Number of slots to allocate
      */
-    function allocate(
-        Arena memory arena,
-        uint256 size
-    ) internal pure returns (bytes32 pointer) {
-        require(
-            arena.offset + size <= arena.capacity,
-            "ArenaAllocator: Out of space"
-        );
-        pointer = TransientAllocator.allocate(
-            keccak256(abi.encode(arena.arenaKey, arena.offset)),
-            size
-        );
+    function allocate(Arena memory arena, uint256 size) internal pure returns (bytes32 pointer) {
+        require(arena.offset + size <= arena.capacity, "ArenaAllocator: Out of space");
+        pointer = TransientAllocator.allocate(keccak256(abi.encode(arena.arenaKey, arena.offset)), size);
         arena.offset += size;
     }
 

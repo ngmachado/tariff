@@ -9,20 +9,14 @@ contract StorageVectorTest is Test {
     using TVector for TVector.Vector;
 
     function testInitialization() public {
-        TVector.Vector memory vector = TVector.newVector(
-            AllocatorFactory.AllocatorType.Storage,
-            10
-        );
+        TVector.Vector memory vector = TVector.newVector(AllocatorFactory.AllocatorType.Storage, 10);
 
         assertEq(TVector.length(vector), 0);
         assertEq(vector.capacity, 10);
     }
 
     function testPushAndGet() public {
-        TVector.Vector memory vector = TVector.newVector(
-            AllocatorFactory.AllocatorType.Storage,
-            2
-        );
+        TVector.Vector memory vector = TVector.newVector(AllocatorFactory.AllocatorType.Storage, 2);
 
         vector.push(42);
         vector.push(43);
@@ -33,10 +27,7 @@ contract StorageVectorTest is Test {
     }
 
     function testAutoResize() public {
-        TVector.Vector memory vector = TVector.newVector(
-            AllocatorFactory.AllocatorType.Storage,
-            1
-        );
+        TVector.Vector memory vector = TVector.newVector(AllocatorFactory.AllocatorType.Storage, 1);
 
         vector.push(1);
         vector.push(2); // Should trigger resize to capacity 2
@@ -50,10 +41,7 @@ contract StorageVectorTest is Test {
     }
 
     function testPop() public {
-        TVector.Vector memory vector = TVector.newVector(
-            AllocatorFactory.AllocatorType.Storage,
-            2
-        );
+        TVector.Vector memory vector = TVector.newVector(AllocatorFactory.AllocatorType.Storage, 2);
 
         vector.push(42);
         vector.push(43);
@@ -68,20 +56,14 @@ contract StorageVectorTest is Test {
     }
 
     function testPopEmptyReverts() public {
-        TVector.Vector memory vector = TVector.newVector(
-            AllocatorFactory.AllocatorType.Storage,
-            1
-        );
+        TVector.Vector memory vector = TVector.newVector(AllocatorFactory.AllocatorType.Storage, 1);
 
         vm.expectRevert(TVector.TVectorEmpty.selector);
         vector.pop();
     }
 
     function testOutOfBoundsReverts() public {
-        TVector.Vector memory vector = TVector.newVector(
-            AllocatorFactory.AllocatorType.Storage,
-            1
-        );
+        TVector.Vector memory vector = TVector.newVector(AllocatorFactory.AllocatorType.Storage, 1);
 
         vector.push(42);
 
@@ -90,14 +72,8 @@ contract StorageVectorTest is Test {
     }
 
     function testMultipleVectorsIndependent() public {
-        TVector.Vector memory vector1 = TVector.newVector(
-            AllocatorFactory.AllocatorType.Storage,
-            2
-        );
-        TVector.Vector memory vector2 = TVector.newVector(
-            AllocatorFactory.AllocatorType.Storage,
-            2
-        );
+        TVector.Vector memory vector1 = TVector.newVector(AllocatorFactory.AllocatorType.Storage, 2);
+        TVector.Vector memory vector2 = TVector.newVector(AllocatorFactory.AllocatorType.Storage, 2);
 
         vector1.push(11);
         vector1.push(12);
@@ -111,10 +87,7 @@ contract StorageVectorTest is Test {
     }
 
     function testVectorPersistenceBetweenCalls() public {
-        TVector.Vector memory vector = TVector.newVector(
-            AllocatorFactory.AllocatorType.Storage,
-            2
-        );
+        TVector.Vector memory vector = TVector.newVector(AllocatorFactory.AllocatorType.Storage, 2);
 
         vector.push(42);
         uint256 length = TVector.length(vector);

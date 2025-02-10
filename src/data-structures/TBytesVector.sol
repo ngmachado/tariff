@@ -16,8 +16,7 @@ library TBytesVector {
     error TBytesVectorInvalidData();
 
     // Counter for generating unique nonces
-    uint256 private constant NONCE_SLOT =
-        0xaa8959192d6857c6a3c773dc74cdc9dac58b573011494b8f3fc2917c93f61b8e;
+    uint256 private constant NONCE_SLOT = 0xaa8959192d6857c6a3c773dc74cdc9dac58b573011494b8f3fc2917c93f61b8e;
 
     struct Vector {
         AllocatorFactory.AllocatorType allocator;
@@ -43,22 +42,16 @@ library TBytesVector {
      * @param allocatorType The storage type (Transient, Memory, Storage)
      * @param initialCapacity The starting capacity
      */
-    function newVector(
-        AllocatorFactory.AllocatorType allocatorType,
-        uint256 initialCapacity
-    ) internal returns (Vector memory vector) {
-        if (initialCapacity == 0 || initialCapacity > type(uint256).max / 2)
+    function newVector(AllocatorFactory.AllocatorType allocatorType, uint256 initialCapacity)
+        internal
+        returns (Vector memory vector)
+    {
+        if (initialCapacity == 0 || initialCapacity > type(uint256).max / 2) {
             revert TBytesVectorCapacityTooLarge();
+        }
 
         vector.allocator = allocatorType;
-        bytes32 slot = keccak256(
-            abi.encodePacked(
-                "TBytesVector",
-                msg.sender,
-                address(this),
-                _getNextNonce()
-            )
-        );
+        bytes32 slot = keccak256(abi.encodePacked("TBytesVector", msg.sender, address(this), _getNextNonce()));
         vector.basePointer = allocatorType.allocate(slot, initialCapacity);
         vector.capacity = initialCapacity;
         vector._length = 0;
@@ -79,10 +72,7 @@ library TBytesVector {
     /**
      * @notice Gets bytes data at an index
      */
-    function at(
-        Vector memory vector,
-        uint256 index
-    ) internal view returns (bytes memory) {
+    function at(Vector memory vector, uint256 index) internal view returns (bytes memory) {
         if (index >= vector._length) revert TBytesVectorOutOfBounds();
         return _getAt(vector, index);
     }
@@ -90,11 +80,7 @@ library TBytesVector {
     /**
      * @notice Sets bytes data at an index
      */
-    function set(
-        Vector memory vector,
-        uint256 index,
-        bytes memory data
-    ) internal {
+    function set(Vector memory vector, uint256 index, bytes memory data) internal {
         if (index >= vector._length) revert TBytesVectorOutOfBounds();
         _setAt(vector, index, data);
     }
@@ -107,11 +93,7 @@ library TBytesVector {
     }
 
     // Internal helpers
-    function _setAt(
-        Vector memory vector,
-        uint256 index,
-        bytes memory data
-    ) private {
+    function _setAt(Vector memory vector, uint256 index, bytes memory data) private {
         bytes32 slot = keccak256(abi.encodePacked(vector.basePointer, index));
 
         // Store length and data separately
@@ -128,10 +110,7 @@ library TBytesVector {
         }
     }
 
-    function _getAt(
-        Vector memory vector,
-        uint256 index
-    ) private view returns (bytes memory) {
+    function _getAt(Vector memory vector, uint256 index) private view returns (bytes memory) {
         bytes32 slot = keccak256(abi.encodePacked(vector.basePointer, index));
 
         // Load length
@@ -155,14 +134,12 @@ library TBytesVector {
 
     function _resize(Vector memory vector, uint256 newCapacity) private {
         if (newCapacity <= vector.capacity) revert TBytesVectorOverflow();
-        if (newCapacity > type(uint256).max / 2)
+        if (newCapacity > type(uint256).max / 2) {
             revert TBytesVectorCapacityTooLarge();
+        }
 
         bytes32 newPointer = vector.allocator.allocate(
-            keccak256(
-                abi.encodePacked(vector.basePointer, "resize", _getNextNonce())
-            ),
-            newCapacity
+            keccak256(abi.encodePacked(vector.basePointer, "resize", _getNextNonce())), newCapacity
         );
 
         Vector memory newVector = Vector({

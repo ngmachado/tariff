@@ -7,7 +7,6 @@ import "../allocators/AllocatorFactory.sol";
  * @title TMap
  * @notice A transient storage-based key-value mapping.
  */
-
 library TMap {
     using AllocatorFactory for AllocatorFactory.AllocatorType;
 
@@ -25,13 +24,9 @@ library TMap {
      * @notice Creates a new transient mapping
      * @param allocatorType The storage type (Transient, Memory, Storage)
      */
-    function newTMap(
-        AllocatorFactory.AllocatorType allocatorType
-    ) internal view returns (Map memory map) {
+    function newTMap(AllocatorFactory.AllocatorType allocatorType) internal view returns (Map memory map) {
         map.allocator = allocatorType;
-        bytes32 slot = keccak256(
-            abi.encodePacked("TMap", msg.sender, address(this))
-        );
+        bytes32 slot = keccak256(abi.encodePacked("TMap", msg.sender, address(this)));
         map.basePointer = allocatorType.allocate(slot, 1); // Base slot with size 1
     }
 
@@ -61,10 +56,7 @@ library TMap {
      * @param map The mapping instance
      * @param key The key to check
      */
-    function contains(
-        Map memory map,
-        bytes32 key
-    ) internal view returns (bool) {
+    function contains(Map memory map, bytes32 key) internal view returns (bool) {
         bytes32 slot = keccak256(abi.encodePacked(map.basePointer, key));
         uint256 value = map.allocator.load(slot);
         return value != 0;

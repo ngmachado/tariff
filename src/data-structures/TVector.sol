@@ -17,8 +17,8 @@ library TVector {
     error TVectorCapacityTooLarge();
     error TVectorEmpty();
     // Counter for generating unique nonces
-    uint256 private constant NONCE_SLOT =
-        0xaa8959192d6857c6a3c773dc74cdc9dac58b573011494b8f3fc2917c93f61b8e;
+
+    uint256 private constant NONCE_SLOT = 0xaa8959192d6857c6a3c773dc74cdc9dac58b573011494b8f3fc2917c93f61b8e;
 
     struct Vector {
         AllocatorFactory.AllocatorType allocator; // Determines storage type
@@ -42,24 +42,19 @@ library TVector {
      * @param allocatorType The storage type (Transient, Memory, Storage)
      * @param initialCapacity The starting capacity of the vector
      */
-    function newVector(
-        AllocatorFactory.AllocatorType allocatorType,
-        uint256 initialCapacity
-    ) internal returns (Vector memory vector) {
+    function newVector(AllocatorFactory.AllocatorType allocatorType, uint256 initialCapacity)
+        internal
+        returns (Vector memory vector)
+    {
         // Validate capacity first, before any allocator operations
         require(initialCapacity > 0, TVectorInvalidCapacity());
-        if (initialCapacity > type(uint256).max / 32)
+        if (initialCapacity > type(uint256).max / 32) {
             revert TVectorCapacityTooLarge();
+        }
 
         vector.allocator = allocatorType;
-        bytes32 slot = keccak256(
-            abi.encodePacked(
-                "TVector",
-                msg.sender,
-                address(this),
-                bytes32(uint256(_getNextNonce()))
-            )
-        );
+        bytes32 slot =
+            keccak256(abi.encodePacked("TVector", msg.sender, address(this), bytes32(uint256(_getNextNonce()))));
 
         vector.basePointer = allocatorType.allocate(slot, initialCapacity);
         vector.capacity = initialCapacity;
@@ -78,15 +73,9 @@ library TVector {
         }
 
         if (vector.allocator == AllocatorFactory.AllocatorType.Memory) {
-            MemoryAllocator.storeAtIndex(
-                vector.basePointer,
-                vector._length,
-                value
-            );
+            MemoryAllocator.storeAtIndex(vector.basePointer, vector._length, value);
         } else {
-            bytes32 slot = keccak256(
-                abi.encodePacked(vector.basePointer, vector._length)
-            );
+            bytes32 slot = keccak256(abi.encodePacked(vector.basePointer, vector._length));
             vector.allocator.store(slot, value);
         }
 
@@ -100,9 +89,7 @@ library TVector {
     function pop(Vector memory vector) internal {
         require(vector._length > 0, TVectorEmpty());
         vector._length--;
-        bytes32 slot = keccak256(
-            abi.encodePacked(vector.basePointer, vector._length)
-        );
+        bytes32 slot = keccak256(abi.encodePacked(vector.basePointer, vector._length));
         vector.allocator.free(slot);
     }
 
@@ -111,18 +98,13 @@ library TVector {
      * @param vector The vector instance
      * @param index The index of the element
      */
-    function at(
-        Vector memory vector,
-        uint256 index
-    ) internal view returns (uint256) {
+    function at(Vector memory vector, uint256 index) internal view returns (uint256) {
         require(index < vector._length, TVectorOutOfBounds());
 
         if (vector.allocator == AllocatorFactory.AllocatorType.Memory) {
             return MemoryAllocator.loadAtIndex(vector.basePointer, index);
         } else {
-            bytes32 slot = keccak256(
-                abi.encodePacked(vector.basePointer, index)
-            );
+            bytes32 slot = keccak256(abi.encodePacked(vector.basePointer, index));
             return vector.allocator.load(slot);
         }
     }
@@ -143,43 +125,26 @@ library TVector {
         require(vector.capacity > 0, TVectorInvalidCapacity());
         uint256 newCapacity = vector.capacity * 2;
         require(newCapacity > vector.capacity, TVectorOverflow());
-        require(
-            newCapacity <= type(uint256).max / 32,
-            TVectorCapacityTooLarge()
-        );
+        require(newCapacity <= type(uint256).max / 32, TVectorCapacityTooLarge());
 
         if (vector.allocator == AllocatorFactory.AllocatorType.Memory) {
             // For memory allocator, allocate new space and copy directly
-            bytes32 newPointer = MemoryAllocator.allocate(
-                bytes32(uint256(vector.basePointer)),
-                newCapacity
-            );
+            bytes32 newPointer = MemoryAllocator.allocate(bytes32(uint256(vector.basePointer)), newCapacity);
 
             // Copy old data using memory operations
             for (uint256 i = 0; i < vector._length; i++) {
-                uint256 value = MemoryAllocator.loadAtIndex(
-                    vector.basePointer,
-                    i
-                );
+                uint256 value = MemoryAllocator.loadAtIndex(vector.basePointer, i);
                 MemoryAllocator.storeAtIndex(newPointer, i, value);
             }
 
             vector.basePointer = newPointer;
             vector.capacity = newCapacity;
         } else {
-            bytes32 slot = keccak256(
-                abi.encodePacked(
-                    "TVector_resize",
-                    vector.basePointer,
-                    newCapacity
-                )
-            );
+            bytes32 slot = keccak256(abi.encodePacked("TVector_resize", vector.basePointer, newCapacity));
             bytes32 newPointer = vector.allocator.allocate(slot, newCapacity);
 
             for (uint256 i = 0; i < vector._length; i++) {
-                bytes32 oldSlot = keccak256(
-                    abi.encodePacked(vector.basePointer, i)
-                );
+                bytes32 oldSlot = keccak256(abi.encodePacked(vector.basePointer, i));
                 bytes32 newSlot = keccak256(abi.encodePacked(newPointer, i));
                 vector.allocator.store(newSlot, vector.allocator.load(oldSlot));
             }
@@ -202,11 +167,11 @@ library TVector {
         vector.allocator.store(slot, value);
     }
 
-    function load(
-        AllocatorFactory.AllocatorType allocatorType,
-        uint256 capacity,
-        bytes32 slot
-    ) internal view returns (Vector memory) {
+    function load(AllocatorFactory.AllocatorType allocatorType, uint256 capacity, bytes32 slot)
+        internal
+        view
+        returns (Vector memory)
+    {
         Vector memory vector;
         vector.allocator = allocatorType;
         vector.basePointer = slot;
