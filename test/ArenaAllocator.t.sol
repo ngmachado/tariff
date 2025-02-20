@@ -3,9 +3,16 @@ pragma solidity ^0.8.28;
 
 import "forge-std/Test.sol";
 import "../src/allocators/ArenaAllocator.sol";
+import "./helpers/VectorRevertHelper.sol";
 
 contract ArenaAllocatorTest is Test {
     using ArenaAllocator for ArenaAllocator.Arena;
+
+    VectorRevertHelper internal helper;
+
+    function setUp() public {
+        helper = new VectorRevertHelper();
+    }
 
     function testInitialize() public {
         ArenaAllocator.Arena memory arena;
@@ -24,7 +31,7 @@ contract ArenaAllocatorTest is Test {
         bytes32 slot = keccak256("test");
 
         vm.expectRevert("ArenaAllocator: Size must be positive");
-        arena.initialize(slot, 0);
+        helper.tryInitialize(arena, slot, 0);
     }
 
     function testAllocateInArena() public {
@@ -46,7 +53,7 @@ contract ArenaAllocatorTest is Test {
 
         arena.allocate(6);
         vm.expectRevert("ArenaAllocator: Out of space");
-        arena.allocate(5);
+        helper.tryAllocate(arena, 5);
     }
 
     function testStoreAndLoad() public {

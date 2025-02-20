@@ -24,9 +24,13 @@ library TMap {
      * @notice Creates a new transient mapping
      * @param allocatorType The storage type (Transient, Memory, Storage)
      */
-    function newTMap(AllocatorFactory.AllocatorType allocatorType) internal view returns (Map memory map) {
+    function newTMap(
+        AllocatorFactory.AllocatorType allocatorType
+    ) internal view returns (Map memory map) {
         map.allocator = allocatorType;
-        bytes32 slot = keccak256(abi.encodePacked("TMap", msg.sender, address(this)));
+        bytes32 slot = keccak256(
+            abi.encodePacked("TMap", msg.sender, address(this))
+        );
         map.basePointer = allocatorType.allocate(slot, 1); // Base slot with size 1
     }
 
@@ -37,6 +41,11 @@ library TMap {
      * @param value The value to store
      */
     function set(Map memory map, bytes32 key, uint256 value) internal {
+        if (map.allocator == AllocatorFactory.AllocatorType.Memory) {
+            bytes32 slot = bytes32(uint256(map.basePointer) + uint256(key));
+            map.allocator.store(slot, value);
+            return;
+        }
         bytes32 slot = keccak256(abi.encodePacked(map.basePointer, key));
         map.allocator.store(slot, value);
     }
@@ -47,6 +56,10 @@ library TMap {
      * @param key The key to lookup
      */
     function get(Map memory map, bytes32 key) internal view returns (uint256) {
+        if (map.allocator == AllocatorFactory.AllocatorType.Memory) {
+            bytes32 slot = bytes32(uint256(map.basePointer) + uint256(key));
+            return map.allocator.load(slot);
+        }
         bytes32 slot = keccak256(abi.encodePacked(map.basePointer, key));
         return map.allocator.load(slot);
     }
@@ -56,7 +69,10 @@ library TMap {
      * @param map The mapping instance
      * @param key The key to check
      */
-    function contains(Map memory map, bytes32 key) internal view returns (bool) {
+    function contains(
+        Map memory map,
+        bytes32 key
+    ) internal view returns (bool) {
         bytes32 slot = keccak256(abi.encodePacked(map.basePointer, key));
         uint256 value = map.allocator.load(slot);
         return value != 0;

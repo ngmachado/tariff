@@ -16,7 +16,8 @@ library TBytesVector {
     error TBytesVectorInvalidData();
 
     // Counter for generating unique nonces
-    uint256 private constant NONCE_SLOT = 0xaa8959192d6857c6a3c773dc74cdc9dac58b573011494b8f3fc2917c93f61b8e;
+    uint256 private constant NONCE_SLOT =
+        0xaa8959192d6857c6a3c773dc74cdc9dac58b573011494b8f3fc2917c93f61b8e;
 
     struct Vector {
         AllocatorFactory.AllocatorType allocator;
@@ -42,19 +43,33 @@ library TBytesVector {
      * @param allocatorType The storage type (Transient, Memory, Storage)
      * @param initialCapacity The starting capacity
      */
-    function newVector(AllocatorFactory.AllocatorType allocatorType, uint256 initialCapacity)
-        internal
-        returns (Vector memory vector)
-    {
-        if (initialCapacity == 0 || initialCapacity > type(uint256).max / 2) {
+    function newVector(
+        AllocatorFactory.AllocatorType allocatorType,
+        uint256 initialCapacity
+    ) internal returns (Vector memory vector) {
+        if (initialCapacity == 0) revert TBytesVectorCapacityTooLarge();
+        if (initialCapacity > type(uint256).max / 32)
             revert TBytesVectorCapacityTooLarge();
-        }
 
         vector.allocator = allocatorType;
-        bytes32 slot = keccak256(abi.encodePacked("TBytesVector", msg.sender, address(this), _getNextNonce()));
-        vector.basePointer = allocatorType.allocate(slot, initialCapacity);
         vector.capacity = initialCapacity;
         vector._length = 0;
+
+        // Allocate space for the vector data
+        bytes32 slot = keccak256(
+            abi.encodePacked(
+                "TBytesVector",
+                msg.sender,
+                address(this),
+                _getNextNonce()
+            )
+        );
+        vector.basePointer = AllocatorFactory.allocate(
+            allocatorType,
+            slot,
+            initialCapacity * 32
+        );
+
         return vector;
     }
 
@@ -62,9 +77,13 @@ library TBytesVector {
      * @notice Pushes bytes data to the vector
      */
     function push(Vector memory vector, bytes memory data) internal {
-        if (vector._length >= vector.capacity) {
+        if (data.length == 0) revert TBytesVectorInvalidData();
+
+        // Resize if needed
+        if (vector._length == vector.capacity) {
             _resize(vector, vector.capacity * 2);
         }
+
         _setAt(vector, vector._length, data);
         vector._length++;
     }
@@ -72,7 +91,10 @@ library TBytesVector {
     /**
      * @notice Gets bytes data at an index
      */
-    function at(Vector memory vector, uint256 index) internal view returns (bytes memory) {
+    function at(
+        Vector memory vector,
+        uint256 index
+    ) internal view returns (bytes memory) {
         if (index >= vector._length) revert TBytesVectorOutOfBounds();
         return _getAt(vector, index);
     }
@@ -80,7 +102,11 @@ library TBytesVector {
     /**
      * @notice Sets bytes data at an index
      */
-    function set(Vector memory vector, uint256 index, bytes memory data) internal {
+    function set(
+        Vector memory vector,
+        uint256 index,
+        bytes memory data
+    ) internal {
         if (index >= vector._length) revert TBytesVectorOutOfBounds();
         _setAt(vector, index, data);
     }
@@ -93,39 +119,48 @@ library TBytesVector {
     }
 
     // Internal helpers
-    function _setAt(Vector memory vector, uint256 index, bytes memory data) private {
-        bytes32 slot = keccak256(abi.encodePacked(vector.basePointer, index));
+    function _setAt(
+        Vector memory vector,
+        uint256 index,
+        bytes memory data
+    ) private {
+        bytes32 dataPointer = _getDataPointer(vector, index);
 
-        // Store length and data separately
-        vector.allocator.store(slot, data.length);
+        // Store length
+        AllocatorFactory.store(vector.allocator, dataPointer, data.length);
 
-        uint256 numSlots = (data.length + 31) / 32;
-        for (uint256 i = 0; i < numSlots; i++) {
-            bytes32 dataSlot = keccak256(abi.encodePacked(slot, "data", i));
-            bytes32 value;
+        // Store content
+        bytes32 contentPointer = bytes32(uint256(dataPointer) + 1);
+        for (uint256 i = 0; i < (data.length + 31) / 32; i++) {
+            uint256 word;
             assembly {
-                value := mload(add(add(data, 32), mul(i, 32)))
+                word := mload(add(add(data, 32), mul(i, 32)))
             }
-            vector.allocator.store(dataSlot, uint256(value));
+            AllocatorFactory.store(
+                vector.allocator,
+                bytes32(uint256(contentPointer) + i * 32),
+                word
+            );
         }
     }
 
-    function _getAt(Vector memory vector, uint256 index) private view returns (bytes memory) {
-        bytes32 slot = keccak256(abi.encodePacked(vector.basePointer, index));
+    function _getAt(
+        Vector memory vector,
+        uint256 index
+    ) private view returns (bytes memory) {
+        bytes32 dataPointer = _getDataPointer(vector, index);
+        uint256 length = AllocatorFactory.load(vector.allocator, dataPointer);
 
-        // Load length
-        uint256 length = vector.allocator.load(slot);
-        if (length == 0) return "";
-
-        // Allocate memory and load data
         bytes memory result = new bytes(length);
-        uint256 numSlots = (length + 31) / 32;
+        bytes32 contentPointer = bytes32(uint256(dataPointer) + 1);
 
-        for (uint256 i = 0; i < numSlots; i++) {
-            bytes32 dataSlot = keccak256(abi.encodePacked(slot, "data", i));
-            uint256 value = vector.allocator.load(dataSlot);
+        for (uint256 i = 0; i < (length + 31) / 32; i++) {
+            uint256 word = AllocatorFactory.load(
+                vector.allocator,
+                bytes32(uint256(contentPointer) + i * 32)
+            );
             assembly {
-                mstore(add(add(result, 32), mul(i, 32)), value)
+                mstore(add(add(result, 32), mul(i, 32)), word)
             }
         }
 
@@ -133,30 +168,110 @@ library TBytesVector {
     }
 
     function _resize(Vector memory vector, uint256 newCapacity) private {
-        if (newCapacity <= vector.capacity) revert TBytesVectorOverflow();
-        if (newCapacity > type(uint256).max / 2) {
-            revert TBytesVectorCapacityTooLarge();
-        }
-
-        bytes32 newPointer = vector.allocator.allocate(
-            keccak256(abi.encodePacked(vector.basePointer, "resize", _getNextNonce())), newCapacity
+        bytes32 slot = keccak256(
+            abi.encodePacked(
+                "TBytesVector_resize",
+                vector.basePointer,
+                _getNextNonce()
+            )
+        );
+        bytes32 newPointer = AllocatorFactory.allocate(
+            vector.allocator,
+            slot,
+            newCapacity * 32
         );
 
-        Vector memory newVector = Vector({
-            allocator: vector.allocator,
-            basePointer: newPointer,
-            capacity: newCapacity,
-            _length: vector._length
-        });
-
-        // Copy existing data to new location
+        // Copy existing data
         for (uint256 i = 0; i < vector._length; i++) {
             bytes memory data = _getAt(vector, i);
-            _setAt(newVector, i, data);
+            _setAtPointer(vector.allocator, newPointer, i, data);
         }
 
-        vector.allocator.free(vector.basePointer);
+        // Free old allocation if possible
+        if (vector.basePointer != bytes32(0)) {
+            AllocatorFactory.free(vector.allocator, vector.basePointer);
+        }
+
         vector.basePointer = newPointer;
         vector.capacity = newCapacity;
+    }
+
+    function _setAtPointer(
+        AllocatorFactory.AllocatorType allocator,
+        bytes32 basePointer,
+        uint256 index,
+        bytes memory data
+    ) private {
+        bytes32 dataPointer = bytes32(
+            uint256(basePointer) + index * 32 * ((data.length + 31) / 32 + 1)
+        );
+
+        // Store length
+        AllocatorFactory.store(allocator, dataPointer, data.length);
+
+        // Store content
+        bytes32 contentPointer = bytes32(uint256(dataPointer) + 1);
+        for (uint256 i = 0; i < (data.length + 31) / 32; i++) {
+            uint256 word;
+            assembly {
+                word := mload(add(add(data, 32), mul(i, 32)))
+            }
+            AllocatorFactory.store(
+                allocator,
+                bytes32(uint256(contentPointer) + i * 32),
+                word
+            );
+        }
+    }
+
+    function _getDataPointer(
+        Vector memory vector,
+        uint256 index
+    ) private pure returns (bytes32) {
+        // Calculate slots needed for each element (1 for length + 1 for data = 2 slots)
+        uint256 slotsPerElement = 2;
+        return
+            bytes32(uint256(vector.basePointer) + index * 32 * slotsPerElement);
+    }
+
+    /**
+     * @notice Reads bytes data directly from an allocator given a base pointer and index
+     * @param allocatorType The storage type (Transient, Memory, Storage)
+     * @param basePointer The base storage pointer of the vector
+     * @param index The index to read from
+     * @return The bytes data at the specified location
+     */
+    function readFrom(
+        AllocatorFactory.AllocatorType allocatorType,
+        bytes32 basePointer,
+        uint256 index
+    ) internal view returns (bytes memory) {
+        bytes32 slot = keccak256(abi.encodePacked(basePointer, index));
+
+        // Load length
+        uint256 dataLength = allocatorType.load(slot);
+        if (dataLength == 0) return "";
+
+        // Allocate memory and load data
+        bytes memory result = new bytes(dataLength);
+        uint256 numSlots = (dataLength + 31) / 32;
+        uint256 lastSlotBytes = dataLength % 32;
+
+        for (uint256 i = 0; i < numSlots; i++) {
+            bytes32 dataSlot = keccak256(abi.encodePacked(slot, "data", i));
+            uint256 value = allocatorType.load(dataSlot);
+
+            // For the last slot, mask out any extra bytes
+            if (i == numSlots - 1 && lastSlotBytes != 0) {
+                uint256 mask = (1 << (lastSlotBytes * 8)) - 1;
+                value = value & mask;
+            }
+
+            assembly {
+                mstore(add(add(result, 32), mul(i, 32)), value)
+            }
+        }
+
+        return result;
     }
 }

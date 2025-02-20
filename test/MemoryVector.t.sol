@@ -1,21 +1,26 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.28;
 
-import "forge-std/Test.sol";
+import "./data-structures/TVectorTestSuite.sol";
 import "../src/data-structures/TVector.sol";
 import "../src/allocators/AllocatorFactory.sol";
 
-contract MemoryVectorTest is Test {
+contract MemoryVectorTest is TVectorTestSuite {
     using TVector for TVector.Vector;
 
+    function setUp() public override {
+        super.setUp();
+        allocatorType = AllocatorFactory.AllocatorType.Memory;
+    }
+
     function testInitialization() public {
-        TVector.Vector memory vector = TVector.newVector(AllocatorFactory.AllocatorType.Memory, 4);
+        TVector.Vector memory vector = TVector.newVector(allocatorType, 4);
         assertEq(vector.length(), 0);
         assertEq(vector.capacity, 4);
     }
 
     function testPushAndGet() public {
-        TVector.Vector memory vector = TVector.newVector(AllocatorFactory.AllocatorType.Memory, 4);
+        TVector.Vector memory vector = TVector.newVector(allocatorType, 4);
 
         vector.push(42);
         assertEq(vector.length(), 1);
@@ -27,7 +32,7 @@ contract MemoryVectorTest is Test {
     }
 
     function testAutoResize() public {
-        TVector.Vector memory vector = TVector.newVector(AllocatorFactory.AllocatorType.Memory, 1);
+        TVector.Vector memory vector = TVector.newVector(allocatorType, 1);
 
         vector.push(1);
         vector.push(2);
@@ -41,7 +46,7 @@ contract MemoryVectorTest is Test {
     }
 
     function testPop() public {
-        TVector.Vector memory vector = TVector.newVector(AllocatorFactory.AllocatorType.Memory, 2);
+        TVector.Vector memory vector = TVector.newVector(allocatorType, 2);
 
         vector.push(42);
         vector.push(43);
@@ -52,24 +57,28 @@ contract MemoryVectorTest is Test {
         assertEq(vector.at(0), 42);
     }
 
-    function testPopEmptyReverts() public {
-        TVector.Vector memory vector = TVector.newVector(AllocatorFactory.AllocatorType.Memory, 2);
+    function testOutOfBoundsReverts() public override {
+        TVector.Vector memory vector = TVector.newVector(allocatorType, 4);
 
-        vm.expectRevert(TVector.TVectorEmpty.selector);
-        vector.pop();
-    }
-
-    function testOutOfBoundsReverts() public {
-        TVector.Vector memory vector = TVector.newVector(AllocatorFactory.AllocatorType.Memory, 2);
+        vm.expectRevert(TVector.TVectorOutOfBounds.selector);
+        helper.tryAt(vector, 0);
 
         vector.push(42);
+
         vm.expectRevert(TVector.TVectorOutOfBounds.selector);
-        vector.at(1);
+        helper.tryAt(vector, 1);
+    }
+
+    function testPopEmptyReverts() public override {
+        TVector.Vector memory vector = TVector.newVector(allocatorType, 4);
+
+        vm.expectRevert(TVector.TVectorEmpty.selector);
+        helper.tryPop(vector);
     }
 
     function testMultipleVectorsIndependent() public {
-        TVector.Vector memory vector1 = TVector.newVector(AllocatorFactory.AllocatorType.Memory, 2);
-        TVector.Vector memory vector2 = TVector.newVector(AllocatorFactory.AllocatorType.Memory, 2);
+        TVector.Vector memory vector1 = TVector.newVector(allocatorType, 2);
+        TVector.Vector memory vector2 = TVector.newVector(allocatorType, 2);
 
         vector1.push(11);
         vector2.push(21);
@@ -82,7 +91,7 @@ contract MemoryVectorTest is Test {
 
     function testLargeDataSet() public {
         TVector.Vector memory vector = TVector.newVector(
-            AllocatorFactory.AllocatorType.Memory,
+            allocatorType,
             16 // Start with reasonable size
         );
 
@@ -105,12 +114,8 @@ contract MemoryVectorTest is Test {
     }
 
     function testLargeValuesAndResize() public {
-        TVector.Vector memory vector = TVector.newVector(
-            AllocatorFactory.AllocatorType.Memory,
-            2 // Start small to force multiple resizes
-        );
+        TVector.Vector memory vector = TVector.newVector(allocatorType, 2);
 
-        // Add large numbers to test full uint256 range
         uint256[] memory values = new uint256[](5);
         values[0] = type(uint256).max;
         values[1] = type(uint256).max - 1;
@@ -123,9 +128,8 @@ contract MemoryVectorTest is Test {
             assertEq(vector.at(i), values[i]);
         }
 
-        // Verify final state
         assertEq(vector.length(), 5);
-        assertEq(vector.capacity, 8); // 2->4->8
+        assertEq(vector.capacity, 8);
         assertEq(vector.at(0), type(uint256).max);
     }
 }

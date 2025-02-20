@@ -1,34 +1,39 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.28;
 
-import "./data-structures/TBytesVectorTestSuite.sol";
+import "forge-std/Test.sol";
+import "../../src/data-structures/TBytesVector.sol";
+import "../../src/allocators/AllocatorFactory.sol";
+import "../helpers/VectorRevertHelper.sol";
 
-contract TBytesVectorTest is TBytesVectorTestSuite {
+abstract contract TBytesVectorTestSuite is Test {
     using TBytesVector for TBytesVector.Vector;
 
-    function setUp() public override {
-        super.setUp();
-        allocatorType = AllocatorFactory.AllocatorType.Transient;
+    AllocatorFactory.AllocatorType internal allocatorType;
+    VectorRevertHelper internal helper;
+
+    function setUp() public virtual {
+        helper = new VectorRevertHelper();
     }
 
-    function testBasicOperations() public override {
+    function testBasicOperations() public virtual {
         TBytesVector.Vector memory vector = TBytesVector.newVector(
             allocatorType,
             4
         );
 
-        bytes memory hello = hex"48656c6c6f"; // "Hello" in hex
-        bytes memory world = hex"576f726c64"; // "World" in hex
+        bytes memory hello = hex"48656c6c6f";
+        bytes memory world = hex"576f726c64";
 
         vector.push(hello);
         vector.push(world);
 
         assertEq(vector.length(), 2);
-        assertEq(keccak256(vector.at(0)), keccak256(hello), "Hello");
-        assertEq(keccak256(vector.at(1)), keccak256(world), "World");
+        assertEq(keccak256(vector.at(0)), keccak256(hello));
+        assertEq(keccak256(vector.at(1)), keccak256(world));
     }
 
-    function testEmptyBytes() public override {
+    function testEmptyBytes() public virtual {
         TBytesVector.Vector memory vector = TBytesVector.newVector(
             allocatorType,
             4
@@ -39,7 +44,23 @@ contract TBytesVectorTest is TBytesVectorTestSuite {
         helper.tryBytesPush(vector, emptyData);
     }
 
-    function testLargeBytes() public override {
+    function testOutOfBounds() public {
+        TBytesVector.Vector memory vector = TBytesVector.newVector(
+            allocatorType,
+            4
+        );
+
+        vm.expectRevert(TBytesVector.TBytesVectorOutOfBounds.selector);
+        helper.tryBytesAt(vector, 0);
+
+        bytes memory testData = "Test";
+        vector.push(testData);
+
+        vm.expectRevert(TBytesVector.TBytesVectorOutOfBounds.selector);
+        helper.tryBytesAt(vector, 1);
+    }
+
+    function testLargeBytes() public virtual {
         TBytesVector.Vector memory vector = TBytesVector.newVector(
             allocatorType,
             4
@@ -59,7 +80,7 @@ contract TBytesVectorTest is TBytesVectorTestSuite {
         }
     }
 
-    function testMultipleVectors() public override {
+    function testMultipleVectors() public virtual {
         TBytesVector.Vector memory vector1 = TBytesVector.newVector(
             allocatorType,
             4
@@ -69,23 +90,13 @@ contract TBytesVectorTest is TBytesVectorTestSuite {
             4
         );
 
-        bytes memory data1 = hex"566563746f7231"; // "Vector1" in hex
-        bytes memory data2 = hex"566563746f7232"; // "Vector2" in hex
+        bytes memory data1 = hex"566563746f7231";
+        bytes memory data2 = hex"566563746f7232";
 
         vector1.push(data1);
         vector2.push(data2);
 
         assertEq(keccak256(vector1.at(0)), keccak256(data1));
         assertEq(keccak256(vector2.at(0)), keccak256(data2));
-    }
-
-    function testInvalidCapacity() public {
-        vm.expectRevert(TBytesVector.TBytesVectorCapacityTooLarge.selector);
-        helper.tryNewBytesVector(allocatorType, 0);
-    }
-
-    function testCapacityTooLarge() public {
-        vm.expectRevert(TBytesVector.TBytesVectorCapacityTooLarge.selector);
-        helper.tryNewBytesVector(allocatorType, type(uint256).max);
     }
 }
