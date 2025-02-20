@@ -12,10 +12,7 @@ contract TBytesVectorTest is TBytesVectorTestSuite {
     }
 
     function testBasicOperations() public override {
-        TBytesVector.Vector memory vector = TBytesVector.newVector(
-            allocatorType,
-            4
-        );
+        TBytesVector.Vector memory vector = TBytesVector.newVector(allocatorType, 4);
 
         bytes memory hello = hex"48656c6c6f"; // "Hello" in hex
         bytes memory world = hex"576f726c64"; // "World" in hex
@@ -29,10 +26,7 @@ contract TBytesVectorTest is TBytesVectorTestSuite {
     }
 
     function testEmptyBytes() public override {
-        TBytesVector.Vector memory vector = TBytesVector.newVector(
-            allocatorType,
-            4
-        );
+        TBytesVector.Vector memory vector = TBytesVector.newVector(allocatorType, 4);
 
         bytes memory emptyData = new bytes(0);
         vm.expectRevert(TBytesVector.TBytesVectorInvalidData.selector);
@@ -40,10 +34,7 @@ contract TBytesVectorTest is TBytesVectorTestSuite {
     }
 
     function testLargeBytes() public override {
-        TBytesVector.Vector memory vector = TBytesVector.newVector(
-            allocatorType,
-            4
-        );
+        TBytesVector.Vector memory vector = TBytesVector.newVector(allocatorType, 4);
 
         bytes memory largeData = new bytes(100);
         for (uint256 i = 0; i < 100; i++) {
@@ -60,14 +51,8 @@ contract TBytesVectorTest is TBytesVectorTestSuite {
     }
 
     function testMultipleVectors() public override {
-        TBytesVector.Vector memory vector1 = TBytesVector.newVector(
-            allocatorType,
-            4
-        );
-        TBytesVector.Vector memory vector2 = TBytesVector.newVector(
-            allocatorType,
-            4
-        );
+        TBytesVector.Vector memory vector1 = TBytesVector.newVector(allocatorType, 4);
+        TBytesVector.Vector memory vector2 = TBytesVector.newVector(allocatorType, 4);
 
         bytes memory data1 = hex"566563746f7231"; // "Vector1" in hex
         bytes memory data2 = hex"566563746f7232"; // "Vector2" in hex

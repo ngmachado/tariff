@@ -14,10 +14,7 @@ contract VectorRevertHelper {
     using TBytesVector for TBytesVector.Vector;
 
     // TVector helpers
-    function tryAt(
-        TVector.Vector memory vector,
-        uint256 index
-    ) external view returns (uint256) {
+    function tryAt(TVector.Vector memory vector, uint256 index) external view returns (uint256) {
         return vector.at(index);
     }
 
@@ -29,56 +26,41 @@ contract VectorRevertHelper {
         vector.pop();
     }
 
-    function tryNewVector(
-        AllocatorFactory.AllocatorType allocatorType,
-        uint256 initialCapacity
-    ) external returns (TVector.Vector memory) {
+    function tryNewVector(AllocatorFactory.AllocatorType allocatorType, uint256 initialCapacity)
+        external
+        returns (TVector.Vector memory)
+    {
         return TVector.newVector(allocatorType, initialCapacity);
     }
 
     // Arena helpers
-    function tryInitialize(
-        ArenaAllocator.Arena memory arena,
-        bytes32 slot,
-        uint256 size
-    ) external {
+    function tryInitialize(ArenaAllocator.Arena memory arena, bytes32 slot, uint256 size) external {
         arena.initialize(slot, size);
     }
 
-    function tryAllocate(
-        ArenaAllocator.Arena memory arena,
-        uint256 size
-    ) external returns (bytes32) {
+    function tryAllocate(ArenaAllocator.Arena memory arena, uint256 size) external returns (bytes32) {
         return arena.allocate(size);
     }
 
     // TransientAllocator helpers
-    function tryTransientAllocate(
-        uint256 size
-    ) external pure returns (bytes32) {
+    function tryTransientAllocate(uint256 size) external pure returns (bytes32) {
         require(size > 0, "TransientAllocator: Size must be positive");
         return keccak256(abi.encodePacked("TransientAllocator", size));
     }
 
     // TBytesVector helpers
-    function tryBytesAt(
-        TBytesVector.Vector memory vector,
-        uint256 index
-    ) external view returns (bytes memory) {
+    function tryBytesAt(TBytesVector.Vector memory vector, uint256 index) external view returns (bytes memory) {
         return vector.at(index);
     }
 
-    function tryBytesPush(
-        TBytesVector.Vector memory vector,
-        bytes memory data
-    ) external {
+    function tryBytesPush(TBytesVector.Vector memory vector, bytes memory data) external {
         vector.push(data);
     }
 
-    function tryNewBytesVector(
-        AllocatorFactory.AllocatorType allocatorType,
-        uint256 initialCapacity
-    ) external returns (TBytesVector.Vector memory) {
+    function tryNewBytesVector(AllocatorFactory.AllocatorType allocatorType, uint256 initialCapacity)
+        external
+        returns (TBytesVector.Vector memory)
+    {
         return TBytesVector.newVector(allocatorType, initialCapacity);
     }
 }

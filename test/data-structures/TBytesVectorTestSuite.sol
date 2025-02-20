@@ -17,10 +17,7 @@ abstract contract TBytesVectorTestSuite is Test {
     }
 
     function testBasicOperations() public virtual {
-        TBytesVector.Vector memory vector = TBytesVector.newVector(
-            allocatorType,
-            4
-        );
+        TBytesVector.Vector memory vector = TBytesVector.newVector(allocatorType, 4);
 
         bytes memory hello = hex"48656c6c6f";
         bytes memory world = hex"576f726c64";
@@ -34,10 +31,7 @@ abstract contract TBytesVectorTestSuite is Test {
     }
 
     function testEmptyBytes() public virtual {
-        TBytesVector.Vector memory vector = TBytesVector.newVector(
-            allocatorType,
-            4
-        );
+        TBytesVector.Vector memory vector = TBytesVector.newVector(allocatorType, 4);
 
         bytes memory emptyData = new bytes(0);
         vm.expectRevert(TBytesVector.TBytesVectorInvalidData.selector);
@@ -45,10 +39,7 @@ abstract contract TBytesVectorTestSuite is Test {
     }
 
     function testOutOfBounds() public {
-        TBytesVector.Vector memory vector = TBytesVector.newVector(
-            allocatorType,
-            4
-        );
+        TBytesVector.Vector memory vector = TBytesVector.newVector(allocatorType, 4);
 
         vm.expectRevert(TBytesVector.TBytesVectorOutOfBounds.selector);
         helper.tryBytesAt(vector, 0);
@@ -61,10 +52,7 @@ abstract contract TBytesVectorTestSuite is Test {
     }
 
     function testLargeBytes() public virtual {
-        TBytesVector.Vector memory vector = TBytesVector.newVector(
-            allocatorType,
-            4
-        );
+        TBytesVector.Vector memory vector = TBytesVector.newVector(allocatorType, 4);
 
         bytes memory largeData = new bytes(100);
         for (uint256 i = 0; i < 100; i++) {
@@ -81,14 +69,8 @@ abstract contract TBytesVectorTestSuite is Test {
     }
 
     function testMultipleVectors() public virtual {
-        TBytesVector.Vector memory vector1 = TBytesVector.newVector(
-            allocatorType,
-            4
-        );
-        TBytesVector.Vector memory vector2 = TBytesVector.newVector(
-            allocatorType,
-            4
-        );
+        TBytesVector.Vector memory vector1 = TBytesVector.newVector(allocatorType, 4);
+        TBytesVector.Vector memory vector2 = TBytesVector.newVector(allocatorType, 4);
 
         bytes memory data1 = hex"566563746f7231";
         bytes memory data2 = hex"566563746f7232";

@@ -31,34 +31,21 @@ contract TSetTest is Test {
         assertTrue(set.contains(value), "Should contain value");
 
         set.remove(value);
-        assertFalse(
-            set.contains(value),
-            "Should not contain value after removal"
-        );
+        assertFalse(set.contains(value), "Should not contain value after removal");
     }
 
     function ftestMultipleStorageTypes() public {
         bytes32 value = bytes32(uint256(1));
 
         // Test Memory allocator
-        TSet.Set memory memorySet = TSet.newTSet(
-            AllocatorFactory.AllocatorType.Memory
-        );
+        TSet.Set memory memorySet = TSet.newTSet(AllocatorFactory.AllocatorType.Memory);
         memorySet.add(value);
-        assertTrue(
-            memorySet.contains(value),
-            "Memory set should contain value"
-        );
+        assertTrue(memorySet.contains(value), "Memory set should contain value");
 
         // Test Storage allocator
-        TSet.Set memory storageSet = TSet.newTSet(
-            AllocatorFactory.AllocatorType.Storage
-        );
+        TSet.Set memory storageSet = TSet.newTSet(AllocatorFactory.AllocatorType.Storage);
         storageSet.add(value);
-        assertTrue(
-            storageSet.contains(value),
-            "Storage set should contain value"
-        );
+        assertTrue(storageSet.contains(value), "Storage set should contain value");
     }
 
     function testMultipleValues() public {
@@ -67,11 +54,11 @@ contract TSetTest is Test {
         values[1] = bytes32(uint256(2));
         values[2] = bytes32(uint256(3));
 
-        for (uint i = 0; i < values.length; i++) {
+        for (uint256 i = 0; i < values.length; i++) {
             set.add(values[i]);
         }
 
-        for (uint i = 0; i < values.length; i++) {
+        for (uint256 i = 0; i < values.length; i++) {
             assertTrue(set.contains(values[i]), "Set should contain value");
         }
     }
@@ -85,10 +72,7 @@ contract TSetTest is Test {
         assertTrue(set.contains(value), "Should still contain value");
 
         set.remove(value);
-        assertFalse(
-            set.contains(value),
-            "Should not contain value after removal"
-        );
+        assertFalse(set.contains(value), "Should not contain value after removal");
     }
 
     function testRemoveNonexistent() public {

@@ -50,9 +50,7 @@ contract TMapTest is Test {
         uint256 value = 100;
 
         // Test Memory allocator
-        TMap.Map memory memoryMap = TMap.newTMap(
-            AllocatorFactory.AllocatorType.Memory
-        );
+        TMap.Map memory memoryMap = TMap.newTMap(AllocatorFactory.AllocatorType.Memory);
 
         // Test setting
         memoryMap.set(key, value);
@@ -82,11 +80,11 @@ contract TMapTest is Test {
         keys[1] = bytes32(uint256(2));
         keys[2] = bytes32(uint256(3));
 
-        for (uint i = 0; i < keys.length; i++) {
+        for (uint256 i = 0; i < keys.length; i++) {
             map.set(keys[i], i + 100);
         }
 
-        for (uint i = 0; i < keys.length; i++) {
+        for (uint256 i = 0; i < keys.length; i++) {
             assertEq(map.get(keys[i]), i + 100, "Incorrect value for key");
         }
     }
